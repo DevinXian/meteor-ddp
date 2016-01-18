@@ -9,6 +9,7 @@ var MeteorDdp = function(wsUri) {
   this.subs = {};         // { pub_name => deferred_id }
   this.watchers = {};     // { coll_name => [cb1, cb2, ...] }
   this.collections = {};  // { coll_name => {docId => {doc}, docId => {doc}, ...} }
+  this.autoReconnectTimer = 1000;
 };
 
 MeteorDdp.prototype._Ids = function() {
@@ -36,6 +37,12 @@ MeteorDdp.prototype.connect = function() {
 
   self.sock.onerror = function(err) {
     conn.reject(err);
+  };
+  
+  self.sock.onclose = function (e) {
+    setTimeout(function () {
+      self.connect();
+    }, self.autoReconnectTimer);
   };
 
   self.sock.onmessage = function(msg) {
